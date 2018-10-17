@@ -1,0 +1,246 @@
+<html>
+
+<!--
+     Arkanon <arkanon@klsd.org.br>
+     2013/07/14 (Dom) 16:22:15 (BRS) - 0.3
+     2013/05/03 (Sex) 04:09:43 (BRS) - 0.2
+     2013/04/19 (Sex) 02:08:11 (BRS) - 0.1
+-->
+
+<head>
+
+  <meta charset="utf-8">
+
+  <style>
+
+    body.defaults
+    {
+      margin: 0;
+    }
+
+    #icon
+    {
+      vertical-align: middle;
+      padding: 2px;
+      border: 1px solid black;
+    }
+
+  </style>
+
+  <script>
+
+    var body, marginTop, marginRight, marginBottom, marginLeft;
+    var canvas, context, dataset, mainloop, row, col, N, M, m, Cr, Ci, ins;
+    var mandelcor, sqmodlim, Z0r, Z0i, W, H, I, S, O, L, R;
+    var def_W, def_H, def_I, def_S, def_O, def_L, def_R;
+
+
+
+    function defaults()
+    {
+      mandelcor = [255, 255, 255];
+       sqmodlim = 4;
+            Z0r = 0;
+            Z0i = 0;
+
+          def_W = 'window.innerWidth  - ( marginLeft + marginRight  )';
+          def_H = 'window.innerHeight - ( marginTop  + marginBottom )';
+          def_I = '300';
+          def_S = '2 * Math.sqrt(sqmodlim) / (H>W?W:H)';
+          def_O = '[ 0 , 0 ]';
+          def_L = '[ O[0] - S*W/2 , O[1] - S*H/2 ]';
+          def_R = '[ O[0] + S*W/2 , O[1] + S*H/2 ]';
+    }
+
+
+
+    function f(i){ return 3*i*N/m }
+
+
+
+    function help()
+    {
+
+      var eg = [
+                 'defaults',
+                 'I=3000&W=500&H=500&O=-0.0231,0.999&S=0.000002',
+                 'I=3000&W=900&L=-2,-.25&R=-1.25,.25'
+               ]
+
+      return ''
+
+        + '<h1><canvas id="icon"></canvas> MandelPlotter v0.3</h1>'
+        + '<em>by Arkanon &lt;arkanon@lsd.org.br&gt;</em>'
+
+        + '<h3>Parameters</h3>'
+        + '<table border="1">'
+        + '<tr><th>Param</th><th>Meaning</th><th>Default      </th><th>In this window       </th></tr>'
+        + '<tr><td>W</td><td>width (px) </td><td>' + def_W + '</td><td>'  + eval(def_W) +  '</td></tr>'
+        + '<tr><td>H</td><td>height (px)</td><td>' + def_H + '</td><td>'  + eval(def_H) +  '</td></tr>'
+        + '<tr><td>I</td><td>iterations </td><td>' + def_I + '</td><td>                     </td></tr>'
+        + '<tr><td>S</td><td>step       </td><td>' + def_S + '</td><td>'  + eval(def_S) +  '</td></tr>'
+        + '<tr><td>O</td><td>origin     </td><td>' + def_O + '</td><td>                     </td></tr>'
+        + '<tr><td>L</td><td>left bottom</td><td>' + def_L + '</td><td>[' + eval(def_L) + ']</td></tr>'
+        + '<tr><td>R</td><td>right top  </td><td>' + def_R + '</td><td>[' + eval(def_R) + ']</td></tr>'
+        + '</table>'
+
+        + '<h3>Examples</h3>'
+        + '<ol>'
+        + eg.map(function(e){return '<li><a href="?'+e+'">'+e+'</a></li>'}).join('')
+        + '</ol>'
+
+    }
+
+
+
+    function draw(canvas_id, parametros)
+    {
+
+      body         = document.getElementsByTagName('body')[0];
+      marginTop    = computed('margin-top'   );
+      marginRight  = computed('margin-right' );
+      marginBottom = computed('margin-bottom');
+      marginLeft   = computed('margin-left'  );
+
+      defaults();
+
+      if (parametros === undefined) parametros = { };
+
+      if ( location.search == '?defaults' ) document.getElementsByTagName('body')[0].className = 'defaults';
+
+      W = parametros['W'] || ( getParameterByName('W')     || eval(def_W) );
+      H = parametros['H'] || ( getParameterByName('H')     || eval(def_H) );
+      I = parametros['I'] || ( getParameterByName('I')     || eval(def_I) );
+      S = parametros['S'] || ( getParameterByName('S')     || eval(def_S) );
+      O = parametros['O'] || ( getParameterByName('O',',') || eval(def_O) );
+      L = parametros['L'] || ( getParameterByName('L',',') || eval(def_L) );
+      R = parametros['R'] || ( getParameterByName('R',',') || eval(def_R) );
+
+      S = (R[0]-L[0])/W;
+      H = W*(R[1]-L[1])/(R[0]-L[0]);
+
+   // alert(W+'\n'+H+'\n'+S);
+
+      if ( location.search === '' && Object.keys(parametros).length == 0 )
+      {
+        body.innerHTML = help();
+        // x  2.00 - 1.25 = 0.75
+        // y  0.15 + 0.15 = 0.30
+        var Lx = -2.00 + .3*( 1 - 2*Math.random() );
+        var Ly = -0.15 + .1*( 1 - 2*Math.random() );
+        draw('icon', { 'I':3000, 'W':100, 'L':[Lx,Ly], 'R':[Lx+0.75,Ly+0.30] } );
+        return false;
+      }
+
+      canvas        = document.getElementById(canvas_id);
+      canvas.width  = W;
+      canvas.height = H;
+      context       =  canvas.getContext('2d');
+      dataset       = context.getImageData(0, 0, W, H);
+
+      row = 0;
+      Ci  = R[1];
+      mainloop = setInterval
+      (
+        function()
+        {
+          var cor;
+          col = 0;
+          for (Cr=L[0]; Cr<=R[0]; Cr+=S)
+          {
+            cor = mandelcor;
+            ins = inSet(Cr, Ci, I, sqmodlim);
+              N = ins[3];
+              M = Math.sqrt(ins[1]);
+              m = Math.sqrt(ins[2]);
+            if (!ins[0]) cor = [ f(0) , f(1) , f(2) ];
+            plotpix(row, col, cor);
+            col++;
+          }
+          Ci -= S;
+          row++;
+          context.putImageData(dataset, 0, 0);
+          if ( Ci<L[1] ) clearInterval(mainloop);
+        }
+      , 1 )
+
+    }
+
+
+
+    function  inSet(Cr, Ci, I, sqmodlim)
+    {
+      var tmp, znr, zni, znm2, n;
+      znr = Z0r;
+      zni = Z0i;
+      for (n=1; n<=I; n++)
+      {
+        tmp  = 2*znr*zni + Ci;
+        znr  = znr*znr - zni*zni + Cr;
+        zni  = tmp;
+        znm2 = znr*znr + zni*zni;
+        cm2  = Cr*Cr + Ci*Ci;
+        if (znm2 >= sqmodlim) return [false, znm2, cm2, n];
+      }
+      return [true, znm2, cm2];
+    }
+
+
+
+    function plotpix(row, col, cor)
+    {
+      var i = ( row * W + col )*4;
+      dataset.data[i+0] = cor[0];
+      dataset.data[i+1] = cor[1];
+      dataset.data[i+2] = cor[2];
+      dataset.data[i+3] = 255;
+    }
+
+
+
+    function computed(prop)
+    {
+      return parseFloat(window.getComputedStyle(body).getPropertyValue(prop));
+    }
+
+
+
+    function getParameterByName(name, splitstr, type)
+    // <http://stackoverflow.com/a/901144>
+    {
+      name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+      var regexS  = "[\\?&]" + name + "=([^&#]*)";
+      var regex   = new RegExp(regexS);
+      var results = regex.exec(location.search);
+      if ( results === null )
+      {
+        return undefined;
+      }
+      else
+      {
+        var value = decodeURIComponent(results[1].replace(/\+/g, " "));
+        if ( splitstr === undefined )
+        {
+          if ( type === undefined || type === 'f' ) value = parseFloat(value);
+        }
+        else
+        {
+          value = value.split(splitstr)
+          // <http://stackoverflow.com/a/4291498>
+          if ( type === undefined || type === 'f' ) value = value.map(function(x){return parseFloat(x)});
+        }
+        return value;
+      }
+    }
+
+
+
+  </script>
+
+</head>
+
+<body onload="draw('plano')">
+  <canvas id="plano"></canvas>
+</body>
+
+</html>

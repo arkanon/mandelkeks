@@ -1,0 +1,1177 @@
+<html>
+
+<!--
+
+     Mandelkeks - Gerador de Conjuntos de Mandelbrot em JS+Canvas
+
+     Arkanon <arkanon@lsd.org.br>
+     2013/05/04 (Sáb) 13:40:33 (BRS) - 0.3.0 beta
+     2013/05/02 (Qui) 02:05:00 (BRS) - 0.2.0 beta
+     2013/04/29 (Seg) 00:44:01 (BRS) - 0.1.0 beta
+     2013/04/25 (Qui) 05:14:03 (BRS) - 0.0.5 beta
+     2013/04/24 (Qua) 04:57:26 (BRS) - 0.0.4 beta
+     2013/04/23 (Ter) 04:00:00 (BRS) - 0.0.3 alpha
+     2013/04/22 (Seg) 06:59:11 (BRS) - 0.0.2 alpha
+     2013/04/19 (Sex) 02:08:11 (BRS) - 0.0.1 pre alpha
+
+     Funcional no Chromium, Chrome, Canary, Firefox, Safari, Opera, Opera Next, IE10
+     Incompativel com IE8 e IE9
+
+     TODO/BUGS
+
+      ok fazer funcionar no Firefox
+      ok corrigir a marcacao de centro em outros niveis de zoom
+      ok iniciar no maior zoom para o circulo de raio 2
+      ok colocar imagem escondida de forma que o Facebook use como thumbnail
+      ok acrescentar referencia as paginas originas das ideias aproveitadas
+      ok fazer que com 0 iteracoes ocorra o que ocorre com -1 :-p
+      ok desabilitar o <enter> na caixa de parametros, mas nao <shift><enter>
+      ok corrigir o desenho
+      ok implementar regras genericas para definir as cores
+      ok colocar as outras marcacoes em layers separados
+      ok armazenar a definicao final do conjunto para o dado numero de iteracoes em um layer separado
+      ok alternar cursor entre ponto e eixos
+      ok parar com <pause>, cancelar com <esc>, continuar/recomecar com <enter>
+      ok ao plotar, apagar do canvas plano os pontos considerados do conjunto
+      ok usar quadriculado no fundo da janela para identificacao adequada de areas transparentes
+      ok desabilitar selecao do texto nos checkbox
+      ok desabilitar antialiasing no zoom do quadriculado no Firefox
+      ok corrigir css da janela de controle no Firefox
+
+       - help
+       - definir parametros de url
+       - implementar os minimos e maximos personalizados
+       - renderizar em um tamanho arbitrario de canvas para obter imagens gigantes
+
+       - marcar a hora de inicio e avaliar o tempo total, restante e hora de finalizacao da renderizacao
+       - calcular a velocidade maxima, media e atual, em px/s
+       - levar em conta a proporcao da janela ao calcular o menor passo que deixe o circulo de raio 2 circuscrito a tela
+       - ao esconder a area de parametros ou status, habilitar o cursor na area visivel
+       - deixar invisiveis elementos nao marcados para aparecer por default
+
+       - armazenar em um array as informacoes analogas de cada canvas
+       - selecionar limites arrastando um retangulo
+       - zoom pela roda do mouse
+
+       - Opera e Next não pintam as primeiras linhas do plano, somente apos mover o mouse
+       - tudo muito lento e travado no Firefox
+
+       - armazenar no github
+       - plotar tela miniatura do passo atual para mostrar o avanco da renderizacao em relacao ao todo
+       - nao interromper execucao quando aba se tornar inativa
+       - implementar scroll da palette
+       - plotar o conjunto de julia associado
+       - otimizar a renderizacao
+
+-->
+
+<head>
+
+  <title>Mandelkeks</title>
+
+  <meta charset="utf-8">
+  <meta name="description" content="Gerador de Conjuntos de Mandelbrot em JS+Canvas">
+
+  <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALS0tTRQUFLt5eXkEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgYGKAFBQX+TU1NFgAAAAAAAAAAs7OzAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABDQ0M+g4ODHhsbG9sAAAD6AQEB/gwMDOoxMTF1uLi4BuXl5QPf398AAAAAAN/f3wAAAAAAAAAAAAAAAAAAAAAALy8vkAICAv8AAAD/AAAA/wAAAP8AAAD/AAAA/w0NDeY6OjoVAAAAAODg4AcAAAAAAAAAAAAAAAAAAAAAKioqcwAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8BAQH/ICAgTt/f3wBKSkoCdnZ2LkBAQFhSUlIOAAAAAAwMDN8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/xgYGJwAAAAAOjo6RAUFBf8AAAD/CQkJ/UdHRzcBAQH/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8eHh6zISEhXhISEtwAAAD/AAAA/wAAAP8YGBj4AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8DAwP7R0dHLzMzM04bGxvYAAAA/wAAAP8AAAD/Ghoa8wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AQEB/jg4OC4AAAAARUVFMgQEBP8AAAD/CQkJ/19fXzABAQH/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8bGxu+29vbAAAAAAFdXV0sMzMzW8/PzwwAAAAADw8P3gAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/Hx8ftQAAAADKysoEAAAAAAAAAAAAAAAAAAAAACkpKWAAAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AQEB/ycnJy7KysoAAAAAAMrKygAAAAAAAAAAAAAAAADIyMgDJycndQICAv8AAAD/AAAA/wAAAP8AAAD/AgIC/w4ODuYcHBwbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEhISEBoaGgfFxcXuwgICN0HBwf6CQkJwSoqKmiMjIwIgoKCBwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAObm5gD///8AAAAAAAAAAAASEhKqAAAA/zc3Nxz///8AAAAAALKysgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMzMzNRwcHJ6urq4CAAAAAAAAAAAAAAAA/+8AAP/PAAD/hwAA/gEAAP4BAAD8AAAAxAAAAIABAACAAQAAxAAAAPwAAAD+AQAA/wEAAP+HAAD/zwAA/+8AAA==">
+  <link rel="image_src" href="http://lh3.googleusercontent.com/-gR9smHzN0lM/UXYdQUbiUKI/AAAAAAAAA9k/Dh6vUd7ybsE/s0/">
+  <link rel="image_src" href="http://lh3.googleusercontent.com/-9uRbhTfr6q4/UX3rsIagAEI/AAAAAAAAA90/wLoJeGqe65w/s0/">
+
+  <style>
+
+    body
+    {
+      font-family: arial;
+      font-size: 10pt;
+    }
+
+    #canvases
+    {
+
+      border: 5px solid red;
+      width: 400px;
+      height: 400px;
+
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAF0lEQVQI12NoaGg4c+YM45kzZ7Zs2QIAN8UIZrGwltwAAAAASUVORK5CYII=);
+      background-size: 16px;
+      /* <http://nullsleep.tumblr.com/post/16417178705/how-to-disable-image-smoothing-in-modern-web-browsers> */
+      image-rendering: optimizeSpeed;             /* fuck smoothing, gimme speed */
+      image-rendering: optimize-contrast;         /* CSS3 Proposed               */
+      image-rendering: -webkit-optimize-contrast; /* Chrome (eventually Safari)  */
+      image-rendering:    -moz-crisp-edges;       /* Firefox                     */
+      image-rendering:      -o-crisp-edges;       /* Opera                       */
+      -ms-interpolation-mode: nearest-neighbor;   /* IE8+                        */
+
+    }
+
+    #plano,
+    #mandel,
+    #eixos,
+    #cursor,
+    #centro,
+    #circ,
+    #ident
+    {
+      position: absolute;
+      cursor: none;
+    }
+
+    #call
+    {
+      -webkit-transition : .5s ease;
+              transition : .5s ease;
+      position: fixed;
+      top: -20px;
+      left: -20px;
+      display: block;
+      width: 40px;
+      height: 40px;
+    }
+
+    #call:hover,
+    .clicked
+    {
+      -webkit-transform  : scale(2) rotate(45deg);
+              transform  : scale(2) rotate(45deg);
+      background: red;
+      opacity: 1;
+      cursor: pointer;
+    }
+
+    .out
+    {
+      -webkit-transform  : rotate(45deg);
+              transform  : rotate(45deg);
+      background: white;
+      opacity: .2;
+    }
+
+    .invisible
+    {
+      -webkit-transition: visibility .5s, opacity .5s;
+              transition: visibility .5s, opacity .5s;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .translucent
+    {
+      -webkit-transition: visibility 0, opacity .5s;
+              transition: visibility 0, opacity .5s;
+      opacity: .3;
+      visibility: visible;
+    }
+
+    .visible
+    {
+      -webkit-transition: visibility 0, opacity .5s;
+              transition: visibility 0, opacity .5s;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #controle
+    {
+      position: absolute;
+      display: block;
+      top: 50px;
+      right: 50px;
+      left: 50px;
+      height : -webkit-calc(100% - 100px);
+      height :         calc(100% - 100px);
+      overflow: auto;
+    }
+
+    #toolbar
+    {
+      position: fixed;
+    }
+
+    #parametros
+    {
+      vertical-align: top;
+      margin-top: 28px;
+      padding: 5px;
+          width  : -webkit-calc(  50% -  2px );
+          width  :         calc(  50% -  2px );
+      max-width  : -webkit-calc(  50% -  2px );
+      max-width  :         calc(  50% -  2px );
+          height : -webkit-calc( 100% - 33px );
+          height :         calc( 100% - 33px );
+      max-height : -webkit-calc( 100% - 33px );
+      max-height :         calc( 100% - 33px );
+      display: inline-block;
+      border: 0;
+      margin-right: 1px;
+    }
+
+    #status
+    {
+      margin-top: 28px;
+      width  : -webkit-calc(  50% - 14px);
+      width  :         calc(  50% - 14px);
+      height : -webkit-calc( 100% - 43px );
+      height :         calc( 100% - 43px );
+      background: lightgray;
+      display: inline-block;
+      padding: 5px;
+      font-family: monospace;
+      white-space: pre;
+    }
+
+    input[type=button]
+    {
+      height: 23px;
+      font-family: arial;
+      font-size: 10pt;
+      padding-bottom: 3px;
+    }
+
+    input,
+    .boolean
+    {
+      vertical-align: top;
+      margin: 0 0 5px 0;
+    }
+
+    .boolean
+    {
+      border: 1px solid #7a7a7a;
+      display: inline-table;
+      padding: 2px 4px 3px 4px;
+      background: white;
+      -webkit-user-select: none;
+       -khtml-user-select: none;
+         -moz-user-select: none;
+          -ms-user-select: none;
+           -o-user-select: none;
+              user-select: none;
+    }
+
+    .boolean input
+    {
+      display: table-cell;
+      vertical-align: middle;
+      margin: 0 4px 0 0;
+    }
+
+    #parar,
+    #cancelar
+    {
+      width: 70px;
+    }
+
+  </style>
+
+  <script>
+
+    var body, marginTop, marginRight, marginBottom, marginLeft;
+    var canvas, context, dataset, mainloop, row, col, N, M, m, Cr, Ci, ins;
+    var convergcor, mandelcor, sqmodlim, Z0r, Z0i, W, H, I, S, O, L, R;
+    var def_W, def_H, def_I, def_S, def_O, def_L, def_R;
+
+    var cancele, pare, cancelar, parar, funct, f;
+    var parametros, salvar, stat, passo, iteracoes, start_row, start_ci;
+
+    var cnv_plano  , ctx_plano  , data_plano;
+    var cnv_mandel , ctx_mandel , data_mandel;
+    var cnv_eixos  , ctx_eixos;
+    var cnv_cursor , ctx_cursor;
+    var cnv_centro , ctx_centro;
+    var cnv_circ   , ctx_circ;
+    var cnv_ident  , ctx_ident;
+    var cnv_texto  , ctx_texto;
+
+    var      centro = [];
+    var         pos = [];
+    var         min = [];
+    var         max = [];
+    var      esqinf = [];
+    var      dirsup = [];
+    var initial_min = [];
+    var initial_max = [];
+    var     new_min = [];
+    var     new_max = [];
+    var     palette = [];
+    var        show = [];
+
+
+
+    function defaults()
+    {
+      convergcor = [ 255, 215,   0 ]; // gold
+       mandelcor = [ 255, 255, 255 ];
+        sqmodlim = 4;
+             Z0r = 0;
+             Z0i = 0;
+
+           def_W = 'window.innerWidth  - ( marginLeft + marginRight  )';
+           def_H = 'window.innerHeight - ( marginTop  + marginBottom )';
+           def_I = '300';
+           def_S = '2 * Math.sqrt(sqmodlim) / (H>W?W:H)';
+           def_O = '[ 0 , 0 ]';
+           def_L = '[ O[0] - S*W/2 , O[1] - S*H/2 ]';
+           def_R = '[ O[0] + S*W/2 , O[1] + S*H/2 ]';
+    }
+
+        largura = W;
+         altura = H;
+      iteracoes = I;
+          passo = S;
+
+    centro['x'] = O[0];
+    centro['y'] = O[1];
+    esqinf['x'] = L[0];
+    esqinf['y'] = L[1];
+    dirsup['x'] = R[0];
+    dirsup['y'] = R[1];
+       pos['x'] = 0;
+       pos['y'] = 0;
+
+
+
+/*
+    function f(i)
+    //   i   indice da componente rgb
+    //   N   numero da iteracao em que o modulo de Z_n se tornou maior que sqrt(sqmodlim)
+    //   M   modulo de Z_N
+    //   m   modulo de C
+    //   S   passo na variacao de C
+    //   z   zoom
+    {
+
+      var z = Math.floor(1/S);
+      for(n=0; n<256; n++) palette[n] = Math.floor((Math.random()*256));
+
+      if (i==0) return 255*col/cnv_plano.width/m;
+      if (i==1) return 255*row/cnv_plano.height/m;
+      if (i==2) return 255*Math.sin(2*N*S);
+
+      if (i==0) return 255*col/cnv_plano.width/m;
+      if (i==1) return 255*row/cnv_plano.height/m;
+      if (i==2) return 0;
+
+      if (i==0) return (M*pos['X']/m)%255;
+      if (i==1) return (M*pos['Y']/m)%255;
+      if (i==2) return (N*z)%255;
+
+      if (i==2) return 255*Math.sin(m*z);
+
+      return ((N*i)/(S*m))%255;
+      return palette[i+N];
+      return (3-i)*N/m;
+      return i*N/m;
+      return i*N/M;
+      return N/M;
+      return i*(M>3?20:85);
+      return 255*Math.random()/Math.exp(Math.pow( M/4 ,2));
+      return 100 * Math.sin(convergcor[i]/M);
+      return convergcor[i]/Math.exp(Math.pow(M/4,2));
+      return convergcor[i]*(.5-1/M);
+      return convergcor[i]/m;
+      return convergcor[i]/M;
+      return convergcor[i]/N;
+      return convergcor[i];
+
+    }
+*/
+
+
+
+    function help()
+    {
+
+      var eg = [
+                 'defaults',
+                 'I=3000&W=500&H=500&O=-0.0231,0.999&S=0.000002',
+                 'I=3000&W=900&L=-2,-.25&R=-1.25,.25'
+               ]
+
+      return ''
+
+        + '<h1><canvas id="icon" style="vertical-align:middle"></canvas> Mandelkeks v0.3.0 beta</h1>'
+        + '<em>by Arkanon &lt;arkanon@lsd.org.br&gt;</em>'
+
+        + '<h3>Parameters</h3>'
+        + '<table border="1">'
+        + '<tr><th>Param</th><th>Meaning</th><th>Default      </th><th>In this window       </th></tr>'
+        + '<tr><td>W</td><td>width (px) </td><td>' + def_W + '</td><td>'  + eval(def_W) +  '</td></tr>'
+        + '<tr><td>H</td><td>height (px)</td><td>' + def_H + '</td><td>'  + eval(def_H) +  '</td></tr>'
+        + '<tr><td>I</td><td>iterations </td><td>' + def_I + '</td><td>                     </td></tr>'
+        + '<tr><td>S</td><td>step       </td><td>' + def_S + '</td><td>'  + eval(def_S) +  '</td></tr>'
+        + '<tr><td>O</td><td>origin     </td><td>' + def_O + '</td><td>                     </td></tr>'
+        + '<tr><td>L</td><td>left bottom</td><td>' + def_L + '</td><td>[' + eval(def_L) + ']</td></tr>'
+        + '<tr><td>R</td><td>right top  </td><td>' + def_R + '</td><td>[' + eval(def_R) + ']</td></tr>'
+        + '</table>'
+
+        + '<h3>Examples</h3>'
+        + '<ol>'
+        + eg.map(function(e){return '<li><a href="?'+e+'">'+e+'</a></li>'}).join('')
+        + '</ol>'
+
+    }
+
+
+
+    function helper()
+    {
+
+   // body         = document.getElementsByTagName('body')[0];
+      body         = document.body;
+
+      marginTop    = computed('margin-top'   );
+      marginRight  = computed('margin-right' );
+      marginBottom = computed('margin-bottom');
+      marginLeft   = computed('margin-left'  );
+
+      call         = document.getElementById('call');
+      controle     = document.getElementById('controle');
+      parametros   = document.getElementById('parametros');
+      cancelar     = document.getElementById('cancelar');
+      parar        = document.getElementById('parar');
+      salvar       = document.getElementById('salvar');
+      stat         = document.getElementById('status');
+
+      cnv_plano    = document.getElementById('plano');
+      cnv_mandel   = document.getElementById('mandel');
+      cnv_eixos    = document.getElementById('eixos');
+      cnv_cursor   = document.getElementById('cursor');
+      cnv_centro   = document.getElementById('centro');
+      cnv_circ     = document.getElementById('circ');
+      cnv_ident    = document.getElementById('ident');
+      cnv_texto    = document.getElementById('texto');
+
+      ctx_plano    = cnv_plano.getContext('2d');
+      ctx_mandel   = cnv_mandel.getContext('2d');
+      ctx_eixos    = cnv_eixos.getContext('2d');
+      ctx_cursor   = cnv_cursor.getContext('2d');
+      ctx_centro   = cnv_centro.getContext('2d');
+      ctx_circ     = cnv_circ.getContext('2d');
+      ctx_ident    = cnv_ident.getContext('2d');
+      ctx_texto    = cnv_texto.getContext('2d');
+
+    }
+
+
+
+    window.onload = function()
+    {
+
+      defaults();
+      helper();
+
+      if (parametros === undefined) parametros = { };
+
+      W = parametros['W'] || ( getParameterByName('W')     || eval(def_W) );
+      H = parametros['H'] || ( getParameterByName('H')     || eval(def_H) );
+      I = parametros['I'] || ( getParameterByName('I')     || eval(def_I) );
+      S = parametros['S'] || ( getParameterByName('S')     || eval(def_S) );
+      O = parametros['O'] || ( getParameterByName('O',',') || eval(def_O) );
+      L = parametros['L'] || ( getParameterByName('L',',') || eval(def_L) );
+      R = parametros['R'] || ( getParameterByName('R',',') || eval(def_R) );
+
+      S = (R[0]-L[0])/W;
+      H = W*(R[1]-L[1])/(R[0]-L[0]);
+
+      if ( window.location.search === '' && Object.keys(parametros).length == 0 )
+      {
+        body.innerHTML = help();
+        draw('icon', { 'I':3000, 'W':100, 'L':[-2,-.15], 'R':[-1.25,.15] } );
+        return false;
+      }
+
+
+
+      parametros.onkeydown = function(e)
+      {
+        // <http://stackoverflow.com/questions/789701>
+        if ( e.keyCode === 13 && !e.shiftKey ) return false;
+      }
+
+      window.onkeydown = function(e)
+      {
+
+        if ( e.keyCode === 19 )
+        {
+          pare    = true;
+          cancele = false;
+          f_parar();
+        }
+
+        if ( e.keyCode === 27 )
+        {
+          pare    = false;
+          cancele = true;
+          f_cancelar();
+        }
+
+        if ( e.keyCode === 13 && (pare||cancele) ) draw();
+
+        e.ctrlKey && change();
+
+      }
+
+      call.onclick           = function( ) { change() };
+      parametros.onkeyup     = function(e) { update_parameter_box() };
+      cnv_cursor.onclick     = function( ) { cancele && update_parameters() };
+      cnv_cursor.onmousemove = function(e) { pos = position(e); draw_cursor(); update_status() };
+      salvar.onclick         = function( ) { save() };
+
+      define_canvases();
+
+      passo = 2*Math.sqrt(sqmodlim) / ( ( cnv_plano.height > cnv_plano.width ? cnv_plano.width : cnv_plano.height ) - 2*5 );
+
+      update_parameters();
+      min['x'] = new_min['x'];
+      min['y'] = new_min['y'];
+      max['x'] = new_max['x'];
+      max['y'] = new_max['y'];
+      update_status();
+      update_parameter_box();
+
+      draw();
+
+    }
+
+
+
+    function f_parar()
+    {
+
+      cancelar.value = 'Cancelar';
+      cancelar.title = '<esc>';
+      if (pare)
+      {
+        parar.value   = 'Continuar';
+        parar.title   = '<enter>';
+        cancele       = false;
+        parar.onclick = function(){ draw() };
+      }
+      else
+      {
+        parar.onclick = function()
+        {
+          pare = true;
+          f_parar();
+        }
+      }
+
+    }
+
+
+
+    function f_cancelar()
+    {
+
+      parar.value = 'Parar';
+      parar.title = '<pause>';
+      if (cancele)
+      {
+        cancelar.value   = 'Reiniciar';
+        cancelar.title   = '<enter>';
+        pare             = false;
+        cancelar.onclick = function(){ draw() };
+      }
+      else
+      {
+        cancelar.onclick = function()
+        {
+          cancele = true;
+          f_cancelar();
+        }
+      }
+
+    }
+
+
+
+    function draw()
+    {
+
+      if (cancele) data_mandel = ctx_mandel.createImageData(cnv_mandel.width, cnv_mandel.height);
+
+      cnv_cursor.width = cnv_cursor.width;
+
+      centro['X'] = undefined;
+      centro['Y'] = undefined;
+
+   // min['x'] = esqinf['x'] == undefined ?   centro['x'] - parseInt(cnv_plano.width /2)*passo : esqinf['x'];
+   // min['y'] = esqinf['y'] == undefined ? - centro['y'] - parseInt(cnv_plano.height/2)*passo : esqinf['y'];
+   // max['x'] = dirsup['x'] == undefined ?   centro['x'] + parseInt(cnv_plano.width /2)*passo : dirsup['x'];
+   // max['y'] = dirsup['y'] == undefined ?   centro['y'] + parseInt(cnv_plano.height/2)*passo : dirsup['y'];
+
+      eval(parametros.value);
+      f = new Function(['i'], funct);
+
+      new_min['x'] = centro['x'] - parseInt(cnv_plano.width /2)*passo;
+      new_min['y'] = centro['y'] - parseInt(cnv_plano.height/2)*passo;
+      new_max['x'] = centro['x'] + parseInt(cnv_plano.width /2)*passo;
+      new_max['y'] = centro['y'] + parseInt(cnv_plano.height/2)*passo;
+
+      initial_min['x'] = new_min['x'];
+      initial_min['y'] = new_min['y'];
+      initial_max['x'] = new_max['x'];
+      initial_max['y'] = new_max['y'];
+
+
+
+      // eixos real e imaginario
+      cnv_eixos.width = cnv_eixos.width;
+      ctx_eixos.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx_eixos.lineWidth   = 5;
+      ctx_eixos.beginPath();
+      ctx_eixos.moveTo(                 .5 , parseInt(cnv_eixos.height/2+centro['y']/passo)+.5 );
+      ctx_eixos.lineTo( cnv_eixos.width-.5 , parseInt(cnv_eixos.height/2+centro['y']/passo)+.5 );
+      ctx_eixos.moveTo( parseInt(cnv_eixos.width/2-centro['x']/passo)+.5 ,                  .5 );
+      ctx_eixos.lineTo( parseInt(cnv_eixos.width/2-centro['x']/passo)+.5 , cnv_eixos.height-.5 );
+      ctx_eixos.stroke();
+
+      // circulo de raio unitario
+      cnv_circ.width = cnv_circ.width;
+      ctx_circ.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx_circ.lineWidth   = 1;
+      var cX = cnv_circ.width  / 2 - centro['x']/passo;
+      var cY = cnv_circ.height / 2 + centro['y']/passo;
+      var r  = 1/passo;
+      ctx_circ.beginPath();
+      ctx_circ.arc(cX, cY, r, 0, 2*Math.PI, false);
+      ctx_circ.stroke();
+
+      // identidade (y=x e y=-x)
+      cnv_ident.width = cnv_ident.width;
+      ctx_ident.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx_ident.lineWidth   = 1;
+      ctx_ident.beginPath();
+      ctx_ident.moveTo( ( cnv_ident.width - cnv_ident.height ) / 2 - ( centro['x'] + centro['y'] )/passo ,                0 );
+      ctx_ident.lineTo( ( cnv_ident.width + cnv_ident.height ) / 2 - ( centro['x'] + centro['y'] )/passo , cnv_ident.height );
+      ctx_ident.moveTo( ( cnv_ident.width + cnv_ident.height ) / 2 - ( centro['x'] - centro['y'] )/passo ,                0 );
+      ctx_ident.lineTo( ( cnv_ident.width - cnv_ident.height ) / 2 - ( centro['x'] - centro['y'] )/passo , cnv_ident.height );
+      ctx_ident.stroke();
+
+
+
+      if ( start_row === undefined || cancele )
+      {
+        row = 0;
+        Ci  = initial_max['y'];
+      }
+      else
+      {
+        row = start_row;
+        Ci  = start_ci;
+        start_row = undefined;
+        start_ci  = undefined;
+      }
+
+      pare    = false;
+      cancele = false;
+      parar.disabled = false;
+      f_parar();
+      f_cancelar();
+
+      mainloop = setInterval
+      (
+
+        function()
+        {
+
+          var cor, alpha;
+
+          col = 0;
+          for (Cr=initial_min['x']; Cr<=initial_max['x']; Cr+=passo)
+          {
+
+            cor = mandelcor;
+            ins = inSet(Cr,Ci, iteracoes, sqmodlim);
+
+            N   = ins[3];
+            M   = Math.sqrt(ins[1]);
+            m   = Math.sqrt(ins[2]);
+
+            if (!ins[0]) cor = [ f(0) , f(1) , f(2) ];
+
+            plot(ins[0], row, col, cor, 255);
+            col++;
+
+          }
+
+          Ci -= passo;
+          row++;
+
+          ctx_plano.putImageData(data_plano, 0, 0);
+          ctx_mandel.putImageData(data_mandel, 0, 0);
+
+          if ( Ci>initial_min['y'] )
+          {
+            // proxima linha de renderizacao
+            ctx_plano.strokeStyle = 'red';
+            ctx_plano.beginPath();
+            ctx_plano.moveTo( .5                 , row-.5 );
+            ctx_plano.lineTo( cnv_plano.width-.5 , row-.5 );
+            ctx_plano.stroke();
+          }
+
+          if ( Ci<initial_min['y'] || cancele || pare ) stop();
+
+        }
+
+      , 1 )
+
+    }
+
+
+
+    function stop()
+    {
+
+      start_row = row;
+      start_ci  = Ci;
+
+      clearInterval(mainloop);
+
+      if ( Ci<initial_min['y'] )
+      {
+        parar.disabled = true;
+        cancele = true;
+        f_cancelar();
+      }
+
+    }
+
+
+
+    function  inSet(Cr, Ci, iteracoes, sqmodlim)
+    {
+      /*
+
+         <http://pt.wikipedia.org/wiki/Conjunto_de_Mandelbrot>
+         O Conjunto de Mandelbrot é o conjunto dos pontos C ∈ ℂ para os quais a sequência
+           ⎛ Z₀ = 0
+           ⎝ Zₙ₊₁ = Zₙ² + C
+           converge.
+
+         Solucao para o "bug do shape": <http://rosettacode.org/wiki/Mandelbrot_set#JavaScript>
+         O produto entre a parte real e imaginária em um dado ponto do laco tem que usar a parte real do laco anterior,
+           e nao a atualizada, no laco atual. Por isso precisa ser calculada antes da parte real, e armazenada em uma
+           variavel temporaria.
+
+         Estava implementado assim:
+           | znr  = znr*znr - zni*zni + Cr;
+           | zni  = 2*znr*zni + Ci;
+
+           e o Conjunto de Mandelbrot exige assim:
+           | tmp  = 2*znr*zni;
+           | znr  = znr*znr - zni*zni + Cr;
+           | zni  = tmp + Ci;
+
+      */
+      var tmp, znr, zni, znm2, n;
+      znr = Z0r;
+      zni = Z0i;
+      for (n=1; n<=iteracoes; n++)
+      {
+        tmp  = 2*znr*zni + Ci;
+        znr  = znr*znr - zni*zni + Cr;
+        zni  = tmp;
+        znm2 = znr*znr + zni*zni;
+        cm2  = Cr*Cr + Ci*Ci;
+        if (znm2 >= sqmodlim) return [false, znm2, cm2, n];
+      }
+      return [true, znm2, cm2];
+    }
+
+
+
+    function plot(inset, row, col, cor, alpha)
+    // <http://stackoverflow.com/questions/7812514>
+    {
+      var dataset;
+      var i = ( row*cnv_plano.width + col )*4;
+      if (inset)
+      {
+        dataset = data_mandel;
+        data_plano.data[i+0] = undefined;
+        data_plano.data[i+1] = undefined;
+        data_plano.data[i+2] = undefined;
+        data_plano.data[i+3] = undefined;
+      }
+      else
+      {
+        dataset = data_plano;
+      }
+      dataset.data[i+0] = cor[0]; // r
+      dataset.data[i+1] = cor[1]; // g
+      dataset.data[i+2] = cor[2]; // b
+      dataset.data[i+3] =  alpha; // a
+    }
+
+
+
+    function define_canvases()
+    {
+
+      cnv_plano.width  = cnv_mandel.width  = cnv_eixos.width  = cnv_cursor.width  = cnv_centro.width  = cnv_circ.width  = cnv_ident.width  = cnv_texto.width  = largura;
+      cnv_plano.height = cnv_mandel.height = cnv_eixos.height = cnv_cursor.height = cnv_centro.height = cnv_circ.height = cnv_ident.height = cnv_texto.height = altura;
+
+      // plano complexo
+      ctx_plano.fillStyle = '#4e5ca0';
+      ctx_plano.fillRect( 0, 0, cnv_plano.width, cnv_plano.height );
+      data_plano = ctx_plano.getImageData( 0, 0, cnv_plano.width , cnv_plano.height  );
+
+      // centro do canvas
+      ctx_centro.strokeStyle = 'blue';
+      ctx_centro.lineWidth   = 1;
+      ctx_centro.lineCap     = 'butt';
+      ctx_centro.beginPath();
+      ctx_centro.dashedLineFromTo( [ .5 , parseInt(cnv_centro.height/2)+.5 ] , [ cnv_centro.width-.5 , parseInt(cnv_centro.height/2)+.5 ] );
+      ctx_centro.dashedLineFromTo( [ parseInt(cnv_centro.width/2)+.5 , .5  ] , [ parseInt(cnv_centro.width/2)+.5 , cnv_centro.height-.5 ] );
+      ctx_centro.stroke();
+
+      // conjunto de mandelbrot
+      data_mandel = ctx_mandel.getImageData( 0, 0, cnv_mandel.width, cnv_mandel.height );
+
+    }
+
+
+
+    function change()
+    {
+
+      if ( controle.className == 'invisible' )
+      {
+              call.className    = 'clicked';
+          controle.className    = 'translucent';
+              call.style.zIndex = 2;
+        cnv_cursor.style.zIndex = 1;
+          controle.style.zIndex = 0;
+      }
+      else if ( controle.className == 'translucent' )
+      {
+              call.className    = 'clicked';
+          controle.className    = 'visible';
+              call.style.zIndex = 2;
+        cnv_cursor.style.zIndex = 0;
+          controle.style.zIndex = 1;
+      }
+      else
+      {
+              call.className    = 'out';
+          controle.className    = 'invisible';
+              call.style.zIndex = 2;
+        cnv_cursor.style.zIndex = 1;
+          controle.style.zIndex = 0;
+      }
+
+    }
+
+
+
+    CanvasRenderingContext2D.prototype.dashedLineFromTo = function(from,to,dashLength)
+    // <http://webdood.com/?p=225>
+    {
+
+      var __dashedLineFromTo =
+      {
+        isDrawing : true,
+        unFinishedPixelsFromLastDash : 0
+      }
+
+      var x                 = from[0],
+          y                 = from[1],
+          dx                = (to[0] - x) + .00000001,
+          dy                =  to[1] - y,
+          slope             = dy/dx,
+          distanceRemaining = Math.sqrt(dx*dx + dy*dy),
+          bUnfinishedPixels = false,
+          theDashLength,
+          xStep;
+
+      if (dashLength == undefined) dashLength = 3,
+
+      this.moveTo(x,y);
+
+      while (distanceRemaining>=0.1)
+      {
+
+        if (__dashedLineFromTo.unFinishedPixelsFromLastDash === 0)
+        {
+          theDashLength = dashLength;
+        }
+        else
+        {
+          theDashLength = __dashedLineFromTo.unFinishedPixelsFromLastDash;
+          __dashedLineFromTo.unFinishedPixelsFromLastDash = 0;
+          __dashedLineFromTo.isDrawing = !__dashedLineFromTo.isDrawing
+        }
+
+        if (dashLength > distanceRemaining)
+        {
+          dashLength = distanceRemaining;
+          bUnfinishedPixels=true;
+        }
+
+        xStep = Math.sqrt( theDashLength*theDashLength / (1 + slope*slope) );
+        x    += xStep;
+        y    += slope*xStep;
+        this[__dashedLineFromTo.isDrawing ? 'lineTo' : 'moveTo'](x,y);
+        distanceRemaining -= theDashLength;
+        __dashedLineFromTo.isDrawing = !__dashedLineFromTo.isDrawing;
+
+      }
+
+      if (bUnfinishedPixels)
+      {
+        __dashedLineFromTo.unFinishedPixelsFromLastDash = theDashLength;
+      }
+
+    }
+
+
+
+    function update_parameter_box()
+    {
+      parametros.rows = parametros.value.split('\n').length;
+    }
+
+
+
+    function update_status()
+    {
+
+      ins = inSet(pos['x'], pos['y'], 50000, sqmodlim);
+      stat.innerHTML  = '    pos x = ' +    pos['x'] + '\n';
+      stat.innerHTML += '        y = ' +    pos['y'] + '\n';
+      stat.innerHTML += 'mod² 50kn = ' +    ins[1]   + '\n';
+      stat.innerHTML += '    pos X = ' +    pos['X'] + '\n';
+      stat.innerHTML += '        Y = ' +    pos['Y'] + '\n';
+      stat.innerHTML += '\n';
+      stat.innerHTML += '    passo = ' + passo       + '\n';
+      stat.innerHTML += 'iteracoes = ' + iteracoes   + '\n';
+      stat.innerHTML += ' centro x = ' + centro['x'] + '\n';
+      stat.innerHTML += '        y = ' + centro['y'] + '\n';
+      stat.innerHTML += ' centro X = ' + centro['X'] + '\n';
+      stat.innerHTML += '        Y = ' + centro['Y'] + '\n';
+      stat.innerHTML += '    min x = ' +    min['x'] + '\n';
+      stat.innerHTML += '        y = ' +    min['y'] + '\n';
+      stat.innerHTML += '    max x = ' +    max['x'] + '\n';
+      stat.innerHTML += '        y = ' +    max['y'] + '\n';
+      stat.innerHTML += 'cnv_plano.width    = ' + cnv_plano.width    + '\n';
+      stat.innerHTML += 'cnv_plano.height   = ' + cnv_plano.height   + '\n';
+      stat.innerHTML += 'window.innerWidth  = ' + window.innerWidth  + '\n';
+      stat.innerHTML += 'window.innerHeight = ' + window.innerHeight + '\n';
+
+    }
+
+
+
+    function update_parameters()
+    {
+
+      new_min['x'] = pos['x'] - parseInt(cnv_plano.width /2)*passo;
+      new_min['y'] = pos['y'] - parseInt(cnv_plano.height/2)*passo;
+      new_max['x'] = pos['x'] + parseInt(cnv_plano.width /2)*passo;
+      new_max['y'] = pos['y'] + parseInt(cnv_plano.height/2)*passo;
+
+       centro['X'] = pos['X'];
+       centro['Y'] = pos['Y'];
+
+      parametros.value  = '        passo = '   + passo        + '\n';
+      parametros.value += '    iteracoes = '   + iteracoes    + '\n';
+      parametros.value += '     sqmodlim = '   + sqmodlim     + '\n';
+      parametros.value += '  centro[\'x\'] = ' +     pos['x'] + '\n';
+      parametros.value += '  centro[\'y\'] = ' +     pos['y'] + '\n';
+      parametros.value += '// esqinf[\'x\'] = ' + new_min['x'] + '\n';
+      parametros.value += '// esqinf[\'y\'] = ' + new_min['y'] + '\n';
+      parametros.value += '// dirsup[\'x\'] = ' + new_max['x'] + '\n';
+      parametros.value += '// dirsup[\'y\'] = ' + new_max['y'] + '\n';
+
+//    parametros.value += '\n' + f.toString();
+
+      parametros.value += '\n';
+
+      parametros.value += 'funct = "'                                    + '';
+      parametros.value += 'var z = Math.floor(1/S);'                     + '';
+      parametros.value += 'if (i==0) return 255*col/cnv_plano.width/m;'  + '';
+      parametros.value += 'if (i==1) return 255*row/cnv_plano.height/m;' + '';
+      parametros.value += 'if (i==2) return 255*Math.sin(2*N*S);'        + '';
+      parametros.value += '"'                                            + '\n';
+
+    }
+
+
+    function position(e)
+    // <http://stackoverflow.com/questions/55677>
+    {
+
+      var X, Y, x, y;
+
+      if (e.pageX && e.pageY)
+      {
+        X = e.pageX;
+        Y = e.pageY;
+      }
+      else
+      {
+        X = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        Y = e.clientY + document.body.scrollTop  + document.documentElement.scrollTop;
+      }
+      X -= cnv_plano.offsetLeft;
+      Y -= cnv_plano.offsetTop;
+
+      x = (   X - parseInt(cnv_plano.width /2) )*passo + centro['x'];
+      y = ( - Y + parseInt(cnv_plano.height/2) )*passo + centro['y'];
+
+      return { 'X':X , 'Y':Y , 'x':x , 'y':y };
+
+    }
+
+
+
+    function draw_cursor()
+    {
+
+      cnv_cursor.width       = cnv_cursor.width;
+      ctx_cursor.lineWidth   = 1;
+
+      ctx_cursor.strokeStyle = 'red';
+      ctx_cursor.beginPath();
+
+      if (document.getElementById('ver-cursor').checked)
+      {
+
+        ctx_cursor.lineCap     = 'butt';
+
+        ctx_cursor.dashedLineFromTo( [                    .5 , parseInt(pos['Y'])+.5 ] , [ cnv_cursor.width   -.5 , parseInt(pos['Y'])+.5 ] );
+        ctx_cursor.dashedLineFromTo( [ parseInt(pos['X'])+.5 ,                   .5  ] , [ parseInt(pos['X'])+.5 , cnv_cursor.height  -.5 ] );
+        ctx_cursor.closePath();
+        ctx_cursor.stroke();
+
+        // Inicialmente, centro(x,y) é indefinido, então os eixos nao sao plotados.
+        // Apos o primeiro clique, centro é definido pelo ultimo clique e sempre havera 2 eixos brancos na tela,
+        //   alem dos vermelhos do cursor.
+        ctx_cursor.strokeStyle = 'white';
+        ctx_cursor.beginPath();
+        ctx_cursor.dashedLineFromTo( [                       .5 , parseInt(centro['Y'])+.5 ] , [ cnv_cursor.width      -.5 , parseInt(centro['Y'])+.5 ] );
+        ctx_cursor.dashedLineFromTo( [ parseInt(centro['X'])+.5 ,                      .5  ] , [ parseInt(centro['X'])+.5 , cnv_cursor.height     -.5 ] );
+
+      }
+      else
+      {
+
+        ctx_cursor.moveTo( parseInt(pos['X'])-.5 , parseInt(pos['Y']) );
+        ctx_cursor.lineTo( parseInt(pos['X'])+.5 , parseInt(pos['Y']) );
+        ctx_cursor.closePath();
+        ctx_cursor.stroke();
+
+        ctx_cursor.strokeStyle = 'white';
+        ctx_cursor.beginPath();
+        ctx_cursor.moveTo( parseInt(centro['X'])-.5 , parseInt(centro['Y']) );
+        ctx_cursor.lineTo( parseInt(centro['X'])+.5 , parseInt(centro['Y']) );
+
+      }
+
+      ctx_cursor.closePath();
+      ctx_cursor.stroke();
+
+    }
+
+
+
+    function save()
+    // <http://greenethumb.com/article/1429/user-friendly-image-saving-from-the-canvas/>
+    {
+      var dataURI = cnv_plano.toDataURL("image/png");
+      dataURI = dataURI.replace("image/png", "image/octet-stream");
+      document.location.href = dataURI;
+    }
+
+
+
+    function mostre(tag)
+    {
+      var ver  = [ 'none' , 'inline-block' ];
+      var id   = tag.id.split('-')[1];
+      show[id] = tag.checked;
+      if (id!='cursor') document.getElementById(id).style.display = ver[0+show[id]];
+    }
+
+
+
+    function computed(prop)
+    {
+      return parseFloat(window.getComputedStyle(body).getPropertyValue(prop));
+    }
+
+
+
+    function getParameterByName(name, splitstr, type)
+    // <http://stackoverflow.com/a/901144>
+    {
+      name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+      var regexS  = "[\\?&]" + name + "=([^&#]*)";
+      var regex   = new RegExp(regexS);
+      var results = regex.exec(window.location.search);
+      if ( results === null )
+      {
+        return undefined;
+      }
+      else
+      {
+        var value = decodeURIComponent(results[1].replace(/\+/g, " "));
+        if ( splitstr === undefined )
+        {
+          if ( type === undefined || type === 'f' ) value = parseFloat(value);
+        }
+        else
+        {
+          value = value.split(splitstr)
+          // <http://stackoverflow.com/a/4291498>
+          if ( type === undefined || type === 'f' ) value = value.map(function(x){return parseFloat(x)});
+        }
+        return value;
+      }
+    }
+
+
+
+  </script>
+
+</head>
+
+<body>
+
+  <div id="canvases">
+    <canvas id="plano"  ></canvas>
+    <canvas id="mandel" ></canvas>
+    <canvas id="eixos"  ></canvas>
+    <canvas id="centro" ></canvas>
+    <canvas id="circ"   ></canvas>
+    <canvas id="ident"  ></canvas>
+    <canvas id="texto"  ></canvas>
+    <canvas id="cursor" ></canvas>
+  </div>
+
+  <div id="controle" class="invisible">
+    <div id="toolbar">
+                             <input id="parar"          type="button">
+                             <input id="cancelar"       type="button">
+                             <input id="salvar"         type="button" value="Salvar (acrescente .png)">
+      <label class="boolean"><input id="ver-cursor"     type="checkbox" checked="checked" onclick="mostre(this)">Cursor</label>
+      <label class="boolean"><input id="ver-plano"      type="checkbox" checked="checked" onclick="mostre(this)">Plano</label>
+      <label class="boolean"><input id="ver-mandel"     type="checkbox" checked="checked" onclick="mostre(this)">Conjunto de Convergência</label>
+      <label class="boolean"><input id="ver-eixos"      type="checkbox" checked="checked" onclick="mostre(this)">Eixos</label>
+      <label class="boolean"><input id="ver-centro"     type="checkbox" checked="checked" onclick="mostre(this)">Centro</label>
+      <label class="boolean"><input id="ver-circ"       type="checkbox" checked="checked" onclick="mostre(this)">Circunferência</label>
+      <label class="boolean"><input id="ver-ident"      type="checkbox" checked="checked" onclick="mostre(this)">Identidade</label>
+      <label class="boolean"><input id="ver-texto"      type="checkbox" checked="checked" onclick="mostre(this)">Texto</label>
+      <label class="boolean"><input id="ver-parametros" type="checkbox" checked="checked" onclick="mostre(this)">Parâmetros</label>
+      <label class="boolean"><input id="ver-status"     type="checkbox" checked="checked" onclick="mostre(this)">Status</label>
+    </div>
+    <textarea id="parametros"></textarea>
+    <div id="status"></div>
+  </div>
+
+  <div id="call" class="out" title="Clique ou apenas pressione <control>"></div>
+
+</body>
+
+</html>
